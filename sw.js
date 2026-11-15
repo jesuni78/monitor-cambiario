@@ -1,32 +1,45 @@
-const CACHE_NAME = 'monitor-cambiario-v34';
-const ASSETS = [
-  './',
+const CACHE_NAME = 'monitor-cambiario-v1';
+const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
   './icon-512.png'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+// 1. Instalación: guardamos la estructura base de la app
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+// 2. Activación: limpiamos cachés viejas si actualizas la versión
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    })
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('dolarapi.com') || e.request.url.includes('criptoya.com') || e.request.url.includes('usdt.com.ve')) {
-    return;
-  }
-  e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
+// 3. Estrategia: Red primero para datos frescos, Caché solo si no hay internet
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Si hay red, devolvemos lo fresco de la web
+        return networkResponse;
+      })
+      .catch(() => {
+        // Si la red falla (sin internet), buscamos en la caché local
+        return caches.match(event.request);
+      })
   );
 });
