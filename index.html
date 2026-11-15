@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-512.png">
+<title>Monitor Cambiario v34</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-border: #334155;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent-bcv: #38bdf8;
+    --accent-usdt: #10b981;
+    --accent-ti: #f59e0b;
+    --accent-btn: #2563eb;
+    --accent-btn-hover: #1d4ed8;
+    --danger: #ef4444;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.4;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .title-wrap h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .status-line {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .btn-refresh {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-refresh:active {
+    background: #334155;
+  }
+  .grid-rates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .card-full {
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .edit-hint {
+    font-size: 0.68rem;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.8;
+  }
+  .rate-input-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .rate-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+    color: var(--text);
+    font-size: 1.45rem;
+    font-weight: 700;
+    padding: 2px 0;
+    outline: none;
+  }
+  .rate-input:focus {
+    border-bottom-color: var(--accent-bcv);
+  }
+  .bcv-color { color: var(--accent-bcv); }
+  .usdt-color { color: var(--accent-usdt); }
+  .ti-color { color: var(--accent-ti); }
+  .unit {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .ti-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ti-value {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--accent-ti);
+  }
+  .ti-badge {
+    font-size: 0.75rem;
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent-ti);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .gap-box {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .gap-item {
+    flex: 1;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .gap-title {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .gap-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .calc-section {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .calc-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .calc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+  .calc-row:last-of-type {
+    margin-bottom: 14px;
+  }
+  .calc-tag {
+    min-width: 92px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .calc-field {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-align: right;
+    outline: none;
+  }
+  .btn-copy-sm {
+    background: #334155;
+    color: var(--text);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-copy-sm:active {
+    background: #475569;
+  }
+  .btn-copy-all {
+    width: 100%;
+    background: var(--accent-btn);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-copy-all:active {
+    background: var(--accent-btn-hover);
+  }
+  .mode-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0 4px;
+  }
+  .mode-select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #10b981;
+    color: #064e3b;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-wrap">
+    <h1>Monitor Cambiario</h1>
+    <div class="status-line" id="statusText">Actualizando tasas...</div>
+  </div>
+  <button class="btn-refresh" id="btnRefresh" onclick="fetchRates()">Actualizar</button>
+</header>
+
+<div class="grid-rates">
+  <div class="card">
+    <div class="card-label">
+      <span>Dólar BCV</span>
+      <span class="edit-hint">Editable</span>
+    </div>
+    <div class="rate-input-wrap">
+      <input type="number" step="0.01" inputmode="decimal" id="bcvInput" class="rate-input bcv-color" value="0.00">
+      <span class="unit">Bs</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">
+      <span>USDT P2P</span>
+      <span class="edit-hint">Editable</span>
+    </div>
+    <div class="rate-input-wrap">
+      <input type="number" step="0.01" inputmode="decimal" id="usdtInput" class="rate-input usdt-color" value="0.00">
+      <span class="unit">Bs</span>
+    </div>
+  </div>
+</div>
+
+<div class="card card-full">
+  <div class="card-label">
+    <span>Tasa Interna</span>
+    <span class="ti-badge">USDT + 10,00 Bs</span>
+  </div>
+  <div class="ti-row">
+    <div class="ti-value" id="tiDisplay">0,00 <span class="unit">Bs</span></div>
+    <div style="font-size:0.78rem; color:var(--muted);" id="sourceBadge">Fuente: CriptoYa / AlCambio</div>
+  </div>
+</div>
+
+<div class="gap-box">
+  <div class="gap-item">
+    <div class="gap-title">Brecha BCV vs USDT</div>
+    <div class="gap-val" id="gapUsdt">0,00 Bs (0,00%)</div>
+  </div>
+  <div class="gap-item">
+    <div class="gap-title">Brecha Tasa Interna</div>
+    <div class="gap-val" id="gapTi">0,00% vs BCV</div>
+  </div>
+</div>
+
+<div class="calc-section">
+  <div class="calc-header">Calculadora Sincronizada</div>
+
+  <div class="calc-row">
+    <span class="calc-tag">Monto USD</span>
+    <input type="number" step="0.01" inputmode="decimal" id="usdField" class="calc-field" value="1">
+  </div>
+
+  <div class="calc-row">
+    <span class="calc-tag bcv-color">BCV</span>
+    <input type="number" step="0.01" inputmode="decimal" id="bcvField" class="calc-field" value="0.00">
+    <button class="btn-copy-sm" onclick="copySingle('bcv')">Copiar</button>
+  </div>
+
+  <div class="calc-row">
+    <span class="calc-tag usdt-color">USDT</span>
+    <input type="number" step="0.01" inputmode="decimal" id="usdtField" class="calc-field" value="0.00">
+    <button class="btn-copy-sm" onclick="copySingle('usdt')">Copiar</button>
+  </div>
+
+  <div class="calc-row">
+    <span class="calc-tag ti-color">Tasa Interna</span>
+    <input type="number" step="0.01" inputmode="decimal" id="tiField" class="calc-field" value="0.00">
+    <button class="btn-copy-sm" onclick="copySingle('ti')">Copiar</button>
+  </div>
+
+  <button class="btn-copy-all" onclick="copyAll()">Copiar todas las referencias</button>
+</div>
+
+<div class="mode-bar">
+  <span>Modo cálculo USDT (estilo v22):</span>
+  <select id="usdtMode" class="mode-select" onchange="fetchRates()">
+    <option value="avg" selected>Promedio P2P (AlCambio)</option>
+    <option value="ask">Punta Compra (totalAsk)</option>
+    <option value="bid">Punta Venta (totalBid)</option>
+  </select>
+</div>
+
+<div class="toast" id="toast">Copiado al portapapeles</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  let bcvRate = 0;
+  let usdtRate = 0;
+  let internaRate = 0;
+
+  const bcvInput = document.getElementById('bcvInput');
+  const usdtInput = document.getElementById('usdtInput');
+  const tiDisplay = document.getElementById('tiDisplay');
+  const gapUsdt = document.getElementById('gapUsdt');
+  const gapTi = document.getElementById('gapTi');
+  const statusText = document.getElementById('statusText');
+  const sourceBadge = document.getElementById('sourceBadge');
+
+  const usdField = document.getElementById('usdField');
+  const bcvField = document.getElementById('bcvField');
+  const usdtField = document.getElementById('usdtField');
+  const tiField = document.getElementById('tiField');
+
+  function formatNumber(num) {
+    if (!isFinite(num) || isNaN(num)) return '0,00';
+    return num.toLocaleString('es-VE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function formatCopyValue(num) {
+    if (!isFinite(num) || isNaN(num)) return '0,00';
+    return num.toFixed(2).replace('.', ',');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function saveCache(bcv, usdt, timeStr) {
+    try {
+      localStorage.setItem('mc_last_rates', JSON.stringify({ bcv, usdt, timeStr }));
+    } catch (e) {}
+  }
+
+  function loadCache() {
+    try {
+      const raw = localStorage.getItem('mc_last_rates');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (data.bcv > 0) bcvInput.value = parseFloat(data.bcv).toFixed(2);
+      if (data.usdt > 0) usdtInput.value = parseFloat(data.usdt).toFixed(2);
+      recalcAll('usd');
+      if (data.timeStr) {
+        statusText.textContent = `Guardado: ${data.timeStr}`;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function recalcAll(source = 'usd') {
+    bcvRate = parseFloat(bcvInput.value) || 0;
+    usdtRate = parseFloat(usdtInput.value) || 0;
+    internaRate = usdtRate > 0 ? usdtRate + 10 : 0;
+
+    tiDisplay.innerHTML = `${formatNumber(internaRate)} <span class="unit">Bs</span>`;
+
+    const diffBs = usdtRate - bcvRate;
+    const diffPct = bcvRate > 0 ? ((diffBs / bcvRate) * 100) : 0;
+    gapUsdt.textContent = `${formatNumber(diffBs)} Bs (${formatNumber(diffPct)}%)`;
+
+    const tiPct = bcvRate > 0 ? (((internaRate - bcvRate) / bcvRate) * 100) : 0;
+    gapTi.textContent = `${formatNumber(tiPct)}% vs BCV`;
+
+    let usd = parseFloat(usdField.value) || 0;
+
+    if (source === 'bcv' && bcvRate > 0) {
+      usd = (parseFloat(bcvField.value) || 0) / bcvRate;
+      usdField.value = usd.toFixed(2);
+    } else if (source === 'usdt' && usdtRate > 0) {
+      usd = (parseFloat(usdtField.value) || 0) / usdtRate;
+      usdField.value = usd.toFixed(2);
+    } else if (source === 'ti' && internaRate > 0) {
+      usd = (parseFloat(tiField.value) || 0) / internaRate;
+      usdField.value = usd.toFixed(2);
+    }
+
+    if (source !== 'bcv') bcvField.value = (usd * bcvRate).toFixed(2);
+    if (source !== 'usdt') usdtField.value = (usd * usdtRate).toFixed(2);
+    if (source !== 'ti') tiField.value = (usd * internaRate).toFixed(2);
+  }
+
+  bcvInput.addEventListener('input', () => {
+    recalcAll('rate');
+    saveCache(parseFloat(bcvInput.value) || 0, parseFloat(usdtInput.value) || 0, 'Manual');
+  });
+  usdtInput.addEventListener('input', () => {
+    recalcAll('rate');
+    saveCache(parseFloat(bcvInput.value) || 0, parseFloat(usdtInput.value) || 0, 'Manual');
+  });
+  usdField.addEventListener('input', () => recalcAll('usd'));
+  bcvField.addEventListener('input', () => recalcAll('bcv'));
+  usdtField.addEventListener('input', () => recalcAll('usdt'));
+  tiField.addEventListener('input', () => recalcAll('ti'));
+
+  function copyText(text, label) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(label);
+      }).catch(() => fallbackCopy(text, label));
+    } else {
+      fallbackCopy(text, label);
+    }
+  }
+
+  function fallbackCopy(text, label) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(label);
+  }
+
+  function copySingle(type) {
+    if (type === 'bcv') {
+      const val = formatCopyValue(parseFloat(bcvField.value) || 0);
+      copyText(`BCV: ${val} Bs`, `Copiado: BCV: ${val} Bs`);
+    } else if (type === 'usdt') {
+      const val = formatCopyValue(parseFloat(usdtField.value) || 0);
+      copyText(`Usdt: ${val} Bs`, `Copiado: Usdt: ${val} Bs`);
+    } else if (type === 'ti') {
+      const val = formatCopyValue(parseFloat(tiField.value) || 0);
+      copyText(`TI: ${val} Bs`, `Copiado: TI: ${val} Bs`);
+    }
+  }
+
+  function copyAll() {
+    const bcvVal = formatCopyValue(parseFloat(bcvField.value) || 0);
+    const usdtVal = formatCopyValue(parseFloat(usdtField.value) || 0);
+    const tiVal = formatCopyValue(parseFloat(tiField.value) || 0);
+    const block = `BCV: ${bcvVal} Bs
+Usdt: ${usdtVal} Bs
+TI: ${tiVal} Bs`;
+    copyText(block, 'Referencias copiadas');
+  }
+
+  async function fetchRates() {
+    statusText.textContent = 'Consultando APIs en vivo...';
+    const mode = document.getElementById('usdtMode').value;
+
+    const reqDolarApi = fetch('https://ve.dolarapi.com/v1/dolares', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+
+    const reqCriptoYa = fetch('https://criptoya.com/api/binancep2p/usdt/ves/1', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+
+    const reqUsdtVe = fetch('https://www.usdt.com.ve/api/v1/rates/current', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+
+    const [dolarData, criptoData, usdtVeData] = await Promise.all([
+      reqDolarApi,
+      reqCriptoYa,
+      reqUsdtVe
+    ]);
+
+    let foundBcv = 0;
+    if (Array.isArray(dolarData)) {
+      const oficial = dolarData.find(item => item.fuente === 'oficial');
+      if (oficial && parseFloat(oficial.promedio) > 0) {
+        foundBcv = parseFloat(oficial.promedio);
+      }
+    }
+    if (!foundBcv && usdtVeData) {
+      const bcvCandidate = usdtVeData.bcv || (usdtVeData.data && usdtVeData.data.bcv);
+      if (parseFloat(bcvCandidate) > 0) {
+        foundBcv = parseFloat(bcvCandidate);
+      }
+    }
+
+    let foundUsdt = 0;
+    let sourceLabel = '';
+
+    if (criptoData && (criptoData.totalAsk || criptoData.ask || criptoData.totalBid || criptoData.bid)) {
+      const ask = parseFloat(criptoData.totalAsk || criptoData.ask || 0);
+      const bid = parseFloat(criptoData.totalBid || criptoData.bid || 0);
+
+      if (mode === 'ask' && ask > 0) {
+        foundUsdt = ask;
+        sourceLabel = 'CriptoYa (Punta Compra)';
+      } else if (mode === 'bid' && bid > 0) {
+        foundUsdt = bid;
+        sourceLabel = 'CriptoYa (Punta Venta)';
+      } else if (ask > 0 && bid > 0) {
+        foundUsdt = (ask + bid) / 2;
+        sourceLabel = 'CriptoYa (Promedio AlCambio)';
+      } else {
+        foundUsdt = ask || bid;
+        sourceLabel = 'CriptoYa P2P';
+      }
+    }
+
+    if (!foundUsdt && usdtVeData) {
+      const root = usdtVeData.data || usdtVeData;
+      const candidate = parseFloat(root.binance || root.usdt || root.ask || root.bid || 0);
+      if (candidate > 0) {
+        foundUsdt = candidate;
+        sourceLabel = 'USDT.com.ve (Respaldo)';
+      }
+    }
+
+    if (!foundUsdt && Array.isArray(dolarData)) {
+      const paralelo = dolarData.find(item => item.fuente === 'paralelo');
+      if (paralelo && parseFloat(paralelo.promedio) > 0) {
+        foundUsdt = parseFloat(paralelo.promedio);
+        sourceLabel = 'DolarApi Paralelo (Respaldo)';
+      }
+    }
+
+    if (foundBcv > 0) bcvInput.value = foundBcv.toFixed(2);
+    if (foundUsdt > 0) {
+      usdtInput.value = foundUsdt.toFixed(2);
+      sourceBadge.textContent = `Fuente: ${sourceLabel}`;
+    } else if (foundBcv === 0) {
+      sourceBadge.textContent = 'Sin conexión (usando último guardado / manual)';
+    }
+
+    recalcAll('usd');
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (foundBcv > 0 || foundUsdt > 0) {
+      statusText.textContent = `Actualizado: ${timeStr}`;
+      saveCache(parseFloat(bcvInput.value) || 0, parseFloat(usdtInput.value) || 0, timeStr);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadCache();
+    fetchRates();
+  });
+</script>
+</body>
+</html>
